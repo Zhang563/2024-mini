@@ -6,12 +6,21 @@ from machine import Pin
 import time
 import random
 import json
-
+import network
+import urequests
 
 N: int = 10
 sample_ms = 10.0
 on_ms = 500
 
+# Wifi Credentials
+SSID = "BU Guest (unencrypted)"
+PASSWORD = ""
+
+# Adafruit IO details
+ADAFRUITIOUSERNAME = 'USERNAME' # Replace with Adafruit io username
+ADAFRUITIOKEY = 'APIKEY' # Replace with Adafruit io Key
+FEEDKEY = 'FEEDKEY'  # Replace with your feed key
 
 def random_time_interval(tmin: float, tmax: float) -> float:
     """return a random time interval between max and min"""
@@ -58,9 +67,8 @@ def scorer(t: list[int | None]) -> None:
     # and score (non-misses / total flashes) i.e. the score a floating point number
     # is in range [0..1]
 
-    score  = ((3-int(misses))/len(t))
-    
-    data = {"Minimum": min(t_good), "Maximum": max(t_good), "Average Response Time": sum(t_good)/len(t), "Score": score}
+    score  = ((N-int(misses))/len(t))
+    data = {"Minimum": min(t_good), "Maximum": max(t_good), "Average Response Time": sum(t_good)/len(t_good), "Score": score}
     
     # %% make dynamic filename and write JSON
     
@@ -73,10 +81,40 @@ def scorer(t: list[int | None]) -> None:
 
     write_json(filename, data)
     
+    upload_data(data)
+    
+
+# Upload data to Adafruit IO
+def upload_data(data):
+    url = f'https://io.adafruit.com/api/v2/{ADAFRUITIOUSERNAME}/feeds/{FEEDKEY}/data'
+    headers = {'X-AIO-Key': ADAFRUITIOKEY, 'Content-Type': 'application/json'}
+    data_to_send = {'value': json.dumps(data)}
+    try:
+        response = urequests.post(url, json=data_to_send, headers=headers)
+        print("Data sent to Adafruit IO:", response.json())
+        response.close()
+    except Exception as e:
+        print("Failed to send data:", e)
+    
+    
 
 
 if __name__ == "__main__":
     # using "if __name__" allows us to reuse functions in other script files
+    
+    # Initialize the Wi-Fi in station mode
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    wlan.connect(SSID, PASSWORD)
+
+    # Wait for connection
+    print("Connecting to Wi-Fi", end="")
+    while not wlan.isconnected():
+        print(".", end="")
+        time.sleep(1)
+
+    print("\nConnected to Wi-Fi")
+    print("IP address:", wlan.ifconfig()[0])
 
     led = Pin("LED", Pin.OUT)
     button = Pin(16, Pin.IN, Pin.PULL_UP)
@@ -104,3 +142,5 @@ if __name__ == "__main__":
     blinker(5, led)
 
     scorer(t)
+
+
