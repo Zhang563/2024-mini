@@ -17,3 +17,6 @@ Inside Charlie's Feed with uploaded data
 
 Inside Yohan's Feed with uploaded data
 ![Alt Text](images/YohanFeed.png)
+
+Example video of playing game data being uploaded to cloud service.
+![Link to Video](https://drive.google.com/file/d/1Yi1b2lI4P7oA4yJ0utTMpUPwO0tOG5xd/view?usp=sharing)
